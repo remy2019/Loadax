@@ -1,3 +1,3 @@
-Lo**ada**x is a Ada port of Lox.
+Lo**ada**x is an Ada port of Lox.
 
 Current goal : Tree-walker interpreter
