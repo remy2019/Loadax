@@ -1,0 +1,12 @@
+name = "loadax"
+description = "Ada port of Lox"
+version = "0.1.0-dev"
+
+authors = ["Seon Woong Yoon"]
+maintainers = ["Seon Woong Yoon <remy2019@gmx.us>"]
+maintainers-logins = ["remy2019"]
+licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
+website = ""
+tags = []
+
+executables = ["loadax"]
