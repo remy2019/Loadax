@@ -11,9 +11,13 @@ package Scanner is
       Ada.Containers.Vectors
          (Index_Type => Natural,
           Element_Type => Token.Token);
+
+   Tokens : Token_Vector.Vector;
+
    procedure Scan_Tokens;
 private
-   Source : Unbounded_String;
+   Unbounded_Source : Unbounded_String;
+   Source : String := To_String (Unbounded_Source);
 
    Start : Natural := 1;
    Current : Natural := 1;
@@ -25,6 +29,8 @@ private
    procedure Advance (C : out Character);
    function Is_At_End return Boolean;
    procedure Add_Token (TT : in Token_Type);
+   procedure Add_Token (TT : in Token_Type; Number : in Float);
+   procedure Add_Token (TT : in Token_Type; Unb_Str : in Unbounded_String);
    procedure Add_Token (TT : in Token_Type; Lit : in Literal);
 
 end Scanner;

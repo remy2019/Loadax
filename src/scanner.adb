@@ -4,7 +4,7 @@ with Ada.Containers.Indefinite_Ordered_Maps;
 with Ada.Characters.Latin_1;
 use Ada.Characters.Latin_1;
 
-with Loadax;
+with Loadax_Run;
 
 package body Scanner is
 
@@ -12,8 +12,6 @@ package body Scanner is
       Ada.Containers.Indefinite_Ordered_Maps
          (Key_Type => String,
           Element_Type => Token_Type);
-
-   Tokens : Token_Vector.Vector;
 
    Keywords : Keyword_Map.Map;
 
@@ -37,7 +35,11 @@ package body Scanner is
          Keywords.Include ("var", TT_VAR);
          Keywords.Include ("while", TT_WHILE);
       end Init_Keywords;
+
+      Default_Lit : Literal;
    begin
+      -- init vector
+     Tokens.Clear;
       Init_Keywords;
       
       while not Is_At_End loop
@@ -47,7 +49,7 @@ package body Scanner is
 
       Tokens.Append ((T_Type => TT_EOF,
                       Lexeme => To_Unbounded_String (""),
-                      T_Literal => Literal'(null),
+                      T_Literal => Default_Lit,
                       Line => Line));
    end Scan_Tokens;
 
@@ -63,17 +65,17 @@ package body Scanner is
          return True;
       end Match;
 
-   function Is_Alpha (C : Character) return Boolean is
-      (
-         (C >= 'a' and C <= 'z') or
-         (C >= 'A' and C <= 'Z') or
-          C = '_'
-      );
+      function Is_Alpha (C : Character) return Boolean is
+         (
+            (C >= 'a' and C <= 'z') or
+            (C >= 'A' and C <= 'Z') or
+             C = '_'
+         );
 
-   function Is_Digit (C : Character) return Boolean is (C >= '0' and C <= '9');
+      function Is_Digit (C : Character) return Boolean is (C >= '0' and C <= '9');
 
-   function Is_Alpha_Numeric (C : Character) return Boolean is
-      (Is_Alpha (C) or Is_Digit (C));
+      function Is_Alpha_Numeric (C : Character) return Boolean is
+         (Is_Alpha (C) or Is_Digit (C));
 
       procedure String is
       begin
@@ -82,47 +84,48 @@ package body Scanner is
          end loop;
 
          if Is_At_End then
-            Loadax.Error (Line, "Unterminated string.");
+            Loadax_Run.Error (Line, 
+               To_Unbounded_String ("Unterminated string."));
             return;
          end if;
 
          Advance (C);
 
          -- Trim surroundings
-         Add_Token (TT_String, Source (Start + 1, Current - 1));
+         Add_Token (TT_String, To_Unbounded_String (Source (Start + 1 .. Current - 1)));
       end String;
 
-   procedure Number is
-   begin
-      while Is_Digit (Peek) loop
-         Advance (C);
-      end loop;
-
-      if Peek = '.' and Is_Digit (Peek_Next) then
-         Advance (C);
+      procedure Number is
+      begin
          while Is_Digit (Peek) loop
             Advance (C);
          end loop;
-      end if;
 
-      Add_Token (TT_Number, Float'Value (Source (Start .. Current)));
-   end Number;
+         if Peek = '.' and Is_Digit (Peek_Next) then
+            Advance (C);
+            while Is_Digit (Peek) loop
+               Advance (C);
+            end loop;
+         end if;
 
-   procedure Identifier is
-      Text : String := "";
-      Is_Keyword : Boolean;
-      T_Type : Token_Type;
-   begin
-      while Is_Alpha_Numeric (Peek) loop
-         Advance (C);
-      end loop;
+         Add_Token (TT_Number, Float'Value (Source (Start .. Current)));
+      end Number;
 
-      Text := Source (Start, Current);
-      Is_Keyword := Keywords.Contains (Text);
-      T_Type := (if Is_Keyword then Keywords (Text) else TT_IDENTIFIER);
+      procedure Identifier is
+         Text : Unbounded_String;
+         Is_Keyword : Boolean;
+         T_Type : Token_Type;
+      begin
+         while Is_Alpha_Numeric (Peek) loop
+            Advance (C);
+         end loop;
 
-      Add_Token (T_Type);
-   end Identifier;
+         Text := To_Unbounded_String (Source (Start .. Current));
+         Is_Keyword := Keywords.Contains (To_String (Text));
+         T_Type := (if Is_Keyword then Keywords (To_String (Text)) else TT_IDENTIFIER);
+
+         Add_Token (T_Type);
+      end Identifier;
 
    begin
       Advance (C);
@@ -165,7 +168,8 @@ package body Scanner is
             elsif Is_Alpha (C) then
                Identifier;
             else
-               Loadax.Error (Line, "Unexpected character.");
+               Loadax_Run.Error (Line, 
+                  To_Unbounded_String ("Unexpected character."));
             end if;
       end case;
    end Scan_Token;
@@ -178,7 +182,7 @@ package body Scanner is
    end Peek;
 
    function Peek_Next return Character is
-      (if (Current + 1 >= Length (Source)) then NUL
+      (if (Current >= Source'Length) then NUL
        else Source (Current + 1));
 
    procedure Advance (C : out Character) is
@@ -187,15 +191,35 @@ package body Scanner is
       Current := Current + 1;
    end Advance;
    
-   function Is_At_End return Boolean is (Current >= Length (Source));
+   function Is_At_End return Boolean is (Current > Source'Length);
 
-   procedure Add_Token (TT : in Token_Type) is (Add_Token (TT, Literal'(null)));
+   procedure Add_Token (TT : in Token_Type) is
+      Lit : Literal;
+   begin
+      Add_Token (TT, Lit);
+   end Add_Token;
+
+   procedure Add_Token (TT : in Token_Type; Number : in Float) is
+      Lit : Literal;
+   begin
+      Lit.L_Type := NUM;
+      Lit.L_Num := Number;
+      Add_Token (TT, Lit);
+   end Add_Token;
+   
+   procedure Add_Token (TT : in Token_Type; Unb_Str : in Unbounded_String) is
+      Lit : Literal;
+   begin
+      Lit.L_Type := STR;
+      Lit.L_Str := Unb_Str;
+      Add_Token (TT, Lit);
+   end Add_Token;
 
    procedure Add_Token (TT : in Token_Type; Lit : in Literal) is
       Text : String := Source (Start .. Current);
    begin
       Tokens.Append ((T_Type => TT,
-                      Lexeme => Text,
+                      Lexeme => To_Unbounded_String (Text),
                       T_Literal => Lit,
                       Line => Line));
    end Add_Token;

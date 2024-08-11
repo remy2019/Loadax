@@ -21,14 +21,12 @@ package Token is
 
       TT_EOF);
 
-   type Literal is tagged null record;
+   type Literal_Type is (NIL, STR, NUM);
 
-   type String_Literal is new Literal with record
-      SL : Unbounded_String;
-   end record;
-
-   type Numeric_Literal is new Literal with record
-      NL : Float;
+   type Literal is record
+      L_Type : Literal_Type := NIL;
+      L_Str : Unbounded_String := To_Unbounded_String ("");
+      L_Num : Float := 0.0;
    end record;
 
    type Token is record

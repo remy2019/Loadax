@@ -1,19 +1,11 @@
 package body Token is
 
    function To_String (Self : Literal) return String is
-   begin
-      return "";
-   end To_String;
-
-   function To_String (Self : String_Literal) return String is
-   begin
-      return To_String (Self.SL);
-   end To_String;
-
-   function To_String (Self : Numeric_Literal) return String is
-   begin
-      return Float'Image (Self.NL);
-   end To_String;
+      ((case Self.L_Type is
+         when NIL => "",
+         when STR => To_String (Self.L_Str),
+         when NUM => Float'Image (Self.L_Num)
+      ));
 
    function To_String (Tk : Token) return String is
    begin
