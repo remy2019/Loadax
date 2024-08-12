@@ -4,13 +4,13 @@ with Token; use Token;
 
 package body Loadax_Run is
    Had_Error : Boolean := False;
-   Input : Unbounded_String;
+   -- Input : Unbounded_String;
 
    procedure Run_Prompt is
    begin
       loop
          Put ("> ");
-         Input := To_Unbounded_String (Get_Line);
+         Source := To_Unbounded_String (Get_Line);
          Run;
          Had_Error := False;
       end loop;

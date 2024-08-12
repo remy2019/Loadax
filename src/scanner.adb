@@ -1,4 +1,9 @@
+-- Debug
+with Ada.Text_IO; use Ada.Text_IO;
+with Ada.Text_IO.Unbounded_IO; use Ada.Text_IO.Unbounded_IO;
+
 -- Start and Current starts from 1. so length check changes
+-- Java substring /= Ada slice function.. end index
 with Ada.Containers.Indefinite_Ordered_Maps;
 
 with Ada.Characters.Latin_1;
@@ -16,6 +21,7 @@ package body Scanner is
    Keywords : Keyword_Map.Map;
 
    procedure Scan_Tokens is
+
       procedure Init_Keywords is
       begin
          Keywords.Include ("and", TT_AND);
@@ -37,9 +43,10 @@ package body Scanner is
       end Init_Keywords;
 
       Default_Lit : Literal;
+
    begin
-      -- init vector
-     Tokens.Clear;
+      -- Init vector
+      Tokens.Clear;
       Init_Keywords;
       
       while not Is_At_End loop
@@ -59,7 +66,7 @@ package body Scanner is
       function Match (Expected : Character) return Boolean is
       begin
          if Is_At_End then return False; end if;
-         if Source (Current) /= Expected then return False; end if;
+         if Element (Source, Current) /= Expected then return False; end if;
 
          Current := Current + 1;
          return True;
@@ -81,6 +88,7 @@ package body Scanner is
       begin
          while Peek /= Quotation and not Is_At_End loop
             if Peek = LF then Line := Line + 1; end if;
+            Advance (C);
          end loop;
 
          if Is_At_End then
@@ -92,7 +100,7 @@ package body Scanner is
          Advance (C);
 
          -- Trim surroundings
-         Add_Token (TT_String, To_Unbounded_String (Source (Start + 1 .. Current - 1)));
+         Add_Token (TT_String, To_Unbounded_String (Slice (Source, Start + 1, Current - 2)));
       end String;
 
       procedure Number is
@@ -108,7 +116,7 @@ package body Scanner is
             end loop;
          end if;
 
-         Add_Token (TT_Number, Float'Value (Source (Start .. Current)));
+         Add_Token (TT_Number, Float'Value (Slice (Source, Start, Current - 1)));
       end Number;
 
       procedure Identifier is
@@ -120,7 +128,7 @@ package body Scanner is
             Advance (C);
          end loop;
 
-         Text := To_Unbounded_String (Source (Start .. Current));
+         Text := To_Unbounded_String (Slice (Source, Start, Current - 1));
          Is_Keyword := Keywords.Contains (To_String (Text));
          T_Type := (if Is_Keyword then Keywords (To_String (Text)) else TT_IDENTIFIER);
 
@@ -177,21 +185,24 @@ package body Scanner is
    function Peek return Character is
    begin
       if Is_At_End then return NUL;
-      else return Source (Current);
+      else return Element (Source, Current);
       end if;
    end Peek;
 
    function Peek_Next return Character is
-      (if (Current >= Source'Length) then NUL
-       else Source (Current + 1));
+      (if (Current >= Length (Source)) then NUL
+       else Element (Source, Current + 1));
 
    procedure Advance (C : out Character) is
    begin
-      C := Source (Current);
+      C := Element (Source, Current);
       Current := Current + 1;
    end Advance;
    
-   function Is_At_End return Boolean is (Current > Source'Length);
+   function Is_At_End return Boolean is
+   begin 
+      return Current > Length (Source);
+   end Is_At_End;
 
    procedure Add_Token (TT : in Token_Type) is
       Lit : Literal;
@@ -216,10 +227,11 @@ package body Scanner is
    end Add_Token;
 
    procedure Add_Token (TT : in Token_Type; Lit : in Literal) is
-      Text : String := Source (Start .. Current);
    begin
       Tokens.Append ((T_Type => TT,
-                      Lexeme => To_Unbounded_String (Text),
+                      Lexeme => To_Unbounded_String (
+                                 Slice (Source, Start, Current - 1)
+                                 ),
                       T_Literal => Lit,
                       Line => Line));
    end Add_Token;

@@ -13,11 +13,10 @@ package Scanner is
           Element_Type => Token.Token);
 
    Tokens : Token_Vector.Vector;
+   Source : Unbounded_String;
 
    procedure Scan_Tokens;
 private
-   Unbounded_Source : Unbounded_String;
-   Source : String := To_String (Unbounded_Source);
 
    Start : Natural := 1;
    Current : Natural := 1;
