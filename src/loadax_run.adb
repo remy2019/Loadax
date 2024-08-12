@@ -4,7 +4,7 @@ with Token; use Token;
 
 package body Loadax_Run is
    Had_Error : Boolean := False;
-   -- Input : Unbounded_String;
+   --  Input : Unbounded_String;
 
    procedure Run_Prompt is
    begin
@@ -27,12 +27,12 @@ package body Loadax_Run is
       end loop;
    end Run;
 
-   procedure Error (Line : in Natural; Msg : in Unbounded_String) is
+   procedure Error (Line : Natural; Msg : Unbounded_String) is
    begin
       Report (Line, To_Unbounded_String (""), Msg);
    end Error;
 
-   procedure Report (Line : in Natural; Where : in Unbounded_String; Msg : in Unbounded_String) is
+   procedure Report (Line : Natural; Where : Unbounded_String; Msg : Unbounded_String) is
    begin
       Put_Line (Standard_Error,
                 "[line " & Natural'Image (Line) & "] Error"

@@ -27,9 +27,9 @@ private
    function Peek_Next return Character;
    procedure Advance (C : out Character);
    function Is_At_End return Boolean;
-   procedure Add_Token (TT : in Token_Type);
-   procedure Add_Token (TT : in Token_Type; Number : in Float);
-   procedure Add_Token (TT : in Token_Type; Unb_Str : in Unbounded_String);
-   procedure Add_Token (TT : in Token_Type; Lit : in Literal);
+   procedure Add_Token (TT : Token_Type);
+   procedure Add_Token (TT : Token_Type; Number : Float);
+   procedure Add_Token (TT : Token_Type; Unb_Str : Unbounded_String);
+   procedure Add_Token (TT : Token_Type; Lit : Literal);
 
 end Scanner;

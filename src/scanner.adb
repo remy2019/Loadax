@@ -1,15 +1,12 @@
--- Debug
-with Ada.Text_IO; use Ada.Text_IO;
-with Ada.Text_IO.Unbounded_IO; use Ada.Text_IO.Unbounded_IO;
-
--- Start and Current starts from 1. so length check changes
--- Java substring /= Ada slice function.. end index
 with Ada.Containers.Indefinite_Ordered_Maps;
 
 with Ada.Characters.Latin_1;
 use Ada.Characters.Latin_1;
 
 with Loadax_Run;
+
+--  Start and Current starts from 1. so length check changes
+--  Java substring /= Ada slice function.. end index
 
 package body Scanner is
 
@@ -22,33 +19,42 @@ package body Scanner is
 
    procedure Scan_Tokens is
 
-      procedure Init_Keywords is
-      begin
-         Keywords.Include ("and", TT_AND);
-         Keywords.Include ("class", TT_CLASS);
-         Keywords.Include ("else", TT_ELSE);
-         Keywords.Include ("false", TT_FALSE);
-         Keywords.Include ("for", TT_FOR);
-         Keywords.Include ("fun", TT_FUN);
-         Keywords.Include ("if", TT_IF);
-         Keywords.Include ("nil", TT_NIL);
-         Keywords.Include ("or", TT_OR);
-         Keywords.Include ("print", TT_PRINT);
-         Keywords.Include ("return", TT_RETURN);
-         Keywords.Include ("super", TT_SUPER);
-         Keywords.Include ("this", TT_THIS);
-         Keywords.Include ("true", TT_TRUE);
-         Keywords.Include ("var", TT_VAR);
-         Keywords.Include ("while", TT_WHILE);
-      end Init_Keywords;
-
       Default_Lit : Literal;
 
+      procedure Init_Scanner is
+
+         procedure Init_Keywords is
+         begin
+            Keywords.Clear;
+            Keywords.Include ("and", TT_AND);
+            Keywords.Include ("class", TT_CLASS);
+            Keywords.Include ("else", TT_ELSE);
+            Keywords.Include ("false", TT_FALSE);
+            Keywords.Include ("for", TT_FOR);
+            Keywords.Include ("fun", TT_FUN);
+            Keywords.Include ("if", TT_IF);
+            Keywords.Include ("nil", TT_NIL);
+            Keywords.Include ("or", TT_OR);
+            Keywords.Include ("print", TT_PRINT);
+            Keywords.Include ("return", TT_RETURN);
+            Keywords.Include ("super", TT_SUPER);
+            Keywords.Include ("this", TT_THIS);
+            Keywords.Include ("true", TT_TRUE);
+            Keywords.Include ("var", TT_VAR);
+            Keywords.Include ("while", TT_WHILE);
+         end Init_Keywords;
+
+      begin
+         Tokens.Clear;
+         Init_Keywords;
+         Start := 1;
+         Current := 1;
+         Line := 1;
+      end Init_Scanner;
+
    begin
-      -- Init vector
-      Tokens.Clear;
-      Init_Keywords;
-      
+      Init_Scanner;
+
       while not Is_At_End loop
          Start := Current;
          Scan_Token;
@@ -65,8 +71,13 @@ package body Scanner is
 
       function Match (Expected : Character) return Boolean is
       begin
-         if Is_At_End then return False; end if;
-         if Element (Source, Current) /= Expected then return False; end if;
+         if Is_At_End then
+            return False;
+         end if;
+
+         if Element (Source, Current) /= Expected then
+            return False;
+         end if;
 
          Current := Current + 1;
          return True;
@@ -74,33 +85,38 @@ package body Scanner is
 
       function Is_Alpha (C : Character) return Boolean is
          (
-            (C >= 'a' and C <= 'z') or
-            (C >= 'A' and C <= 'Z') or
+            (C >= 'a' and then C <= 'z') or else
+            (C >= 'A' and then C <= 'Z') or else
              C = '_'
          );
 
-      function Is_Digit (C : Character) return Boolean is (C >= '0' and C <= '9');
+      function Is_Digit (C : Character) return Boolean is
+         (C >= '0' and then C <= '9');
 
       function Is_Alpha_Numeric (C : Character) return Boolean is
-         (Is_Alpha (C) or Is_Digit (C));
+         (Is_Alpha (C) or else Is_Digit (C));
 
       procedure String is
       begin
-         while Peek /= Quotation and not Is_At_End loop
-            if Peek = LF then Line := Line + 1; end if;
+         while Peek /= Quotation and then not Is_At_End loop
+            if Peek = LF then
+               Line := Line + 1;
+            end if;
             Advance (C);
          end loop;
 
          if Is_At_End then
-            Loadax_Run.Error (Line, 
+            Loadax_Run.Error (Line,
                To_Unbounded_String ("Unterminated string."));
             return;
          end if;
 
          Advance (C);
 
-         -- Trim surroundings
-         Add_Token (TT_String, To_Unbounded_String (Slice (Source, Start + 1, Current - 2)));
+         --  Trim surroundings
+         Add_Token (TT_STRING,
+                    To_Unbounded_String
+                     (Slice (Source, Start + 1, Current - 2)));
       end String;
 
       procedure Number is
@@ -109,14 +125,16 @@ package body Scanner is
             Advance (C);
          end loop;
 
-         if Peek = '.' and Is_Digit (Peek_Next) then
+         if Peek = '.' and then Is_Digit (Peek_Next) then
             Advance (C);
             while Is_Digit (Peek) loop
                Advance (C);
             end loop;
          end if;
 
-         Add_Token (TT_Number, Float'Value (Slice (Source, Start, Current - 1)));
+         Add_Token (TT_NUMBER,
+                    Float'Value
+                      (Slice (Source, Start, Current - 1)));
       end Number;
 
       procedure Identifier is
@@ -130,7 +148,9 @@ package body Scanner is
 
          Text := To_Unbounded_String (Slice (Source, Start, Current - 1));
          Is_Keyword := Keywords.Contains (To_String (Text));
-         T_Type := (if Is_Keyword then Keywords (To_String (Text)) else TT_IDENTIFIER);
+         T_Type := (if Is_Keyword
+                     then Keywords (To_String (Text))
+                     else TT_IDENTIFIER);
 
          Add_Token (T_Type);
       end Identifier;
@@ -159,7 +179,7 @@ package body Scanner is
             Add_Token (if Match ('=') then TT_GREATER_EQUAL else TT_GREATER);
          when '/' =>
             if Match ('/') then
-               while Peek /= LF and not is_At_End loop
+               while Peek /= LF and then not Is_At_End loop
                   Advance (C);
                end loop;
             else
@@ -176,7 +196,7 @@ package body Scanner is
             elsif Is_Alpha (C) then
                Identifier;
             else
-               Loadax_Run.Error (Line, 
+               Loadax_Run.Error (Line,
                   To_Unbounded_String ("Unexpected character."));
             end if;
       end case;
@@ -184,41 +204,44 @@ package body Scanner is
 
    function Peek return Character is
    begin
-      if Is_At_End then return NUL;
-      else return Element (Source, Current);
+      if Is_At_End then
+         return NUL;
+      else
+         return Element (Source, Current);
       end if;
    end Peek;
 
    function Peek_Next return Character is
-      (if (Current >= Length (Source)) then NUL
-       else Element (Source, Current + 1));
+      (if Current >= Length (Source)
+         then NUL
+         else Element (Source, Current + 1));
 
    procedure Advance (C : out Character) is
    begin
       C := Element (Source, Current);
       Current := Current + 1;
    end Advance;
-   
+
    function Is_At_End return Boolean is
-   begin 
+   begin
       return Current > Length (Source);
    end Is_At_End;
 
-   procedure Add_Token (TT : in Token_Type) is
+   procedure Add_Token (TT : Token_Type) is
       Lit : Literal;
    begin
       Add_Token (TT, Lit);
    end Add_Token;
 
-   procedure Add_Token (TT : in Token_Type; Number : in Float) is
+   procedure Add_Token (TT : Token_Type; Number : Float) is
       Lit : Literal;
    begin
       Lit.L_Type := NUM;
       Lit.L_Num := Number;
       Add_Token (TT, Lit);
    end Add_Token;
-   
-   procedure Add_Token (TT : in Token_Type; Unb_Str : in Unbounded_String) is
+
+   procedure Add_Token (TT : Token_Type; Unb_Str : Unbounded_String) is
       Lit : Literal;
    begin
       Lit.L_Type := STR;
@@ -226,7 +249,7 @@ package body Scanner is
       Add_Token (TT, Lit);
    end Add_Token;
 
-   procedure Add_Token (TT : in Token_Type; Lit : in Literal) is
+   procedure Add_Token (TT : Token_Type; Lit : Literal) is
    begin
       Tokens.Append ((T_Type => TT,
                       Lexeme => To_Unbounded_String (

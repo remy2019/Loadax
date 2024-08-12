@@ -4,7 +4,7 @@ package Loadax_Run is
 
    procedure Run_Prompt;
    procedure Run;
-   procedure Error (Line : in Natural; Msg : in Unbounded_String);
-   procedure Report (Line : in Natural; Where : in Unbounded_String; Msg : in Unbounded_String);
+   procedure Error (Line : Natural; Msg : Unbounded_String);
+   procedure Report (Line : Natural; Where : Unbounded_String; Msg : Unbounded_String);
 
 end Loadax_Run;
